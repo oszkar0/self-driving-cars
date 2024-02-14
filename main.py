@@ -7,7 +7,7 @@ clock = pygame.time.Clock()
 running = True
 dt = 0
 
-car = Car(226, 111, -90)
+car = Car(226, 111, -90, ai=True)
 track = pygame.image.load("track.png")
 
 
@@ -25,7 +25,7 @@ while running:
     pygame.display.flip()
 
     if not car.alive:
-        car = Car(226, 111, -90)
+        car = Car(226, 111, -90, ai=True)
 
     dt = clock.tick(60) / 1000
 

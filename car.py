@@ -1,6 +1,8 @@
 import math
 import pygame
 import time 
+import tensorflow as tf
+import numpy as np
 
 CAR_LENGHT = 45
 CAR_WIDTH = 20
@@ -22,6 +24,14 @@ class Car:
         self.distance = 0;
         self.birth_time = time.time()
         self.time_alive = 0;
+        self.car_info = np.ones(ray_count + 1).reshape(1, -1)
+    
+        if self.ai:
+            self.brain = tf.keras.models.Sequential([
+                tf.keras.layers.Input(ray_count + 1), # input = sensors + speed
+                tf.keras.layers.Dense(ray_count + 1),
+                tf.keras.layers.Dense(2) ## output = rear/forward + left/right
+            ])
 
     def get_keyboard_controls(self):
         keys = pygame.key.get_pressed()
@@ -39,8 +49,24 @@ class Car:
         return left, right, forward, rear
 
 
-    def get_neaural_network_controls(self):
-        pass
+    def get_neural_network_controls(self):
+        left, right, forward, rear = False, False, False, False
+        self.car_info[:, :-1] = 1 - self.car_info[:, :-1] / self.radar.ray_length
+        self.car_info[:, -1] = self.car_info[:, -1] / MAX_SPEED
+        steering = self.brain.predict(self.car_info, verbose=0)
+
+        if steering[0, 0] >= 0:
+            forward = True
+        else: 
+            rear = True
+
+        if steering[0, 1] >= 0:
+            right = True
+        else:
+            left = True
+
+        return left, right, forward, rear
+        
 
     def update(self, dt, track, collision_color):
         ## get controls
@@ -94,7 +120,7 @@ class Car:
         
         ##check radars
         radar_readings = self.radar.check_radar(self.x, self.y, self.angle, track, collision_color)
-        
+        self.car_info = np.hstack([radar_readings, self.speed]).reshape(1, -1)
 
     def draw(self, screen):
         car_points = self.calculate_rotated_car_points()
@@ -163,8 +189,8 @@ class Radar():
                     self.ray_collision_points.append(ray_end)
                     break
 
-                self.ray_collision_points_distances.append(dist)
-                self.ray_cords.append([(car_x, car_y), ray_end])
+            self.ray_collision_points_distances.append(dist)
+            self.ray_cords.append([(car_x, car_y), ray_end])
 
         return self.ray_collision_points_distances
     
