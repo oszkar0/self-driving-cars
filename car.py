@@ -124,13 +124,12 @@ class Radar():
 
         self.ray_cords = []
         self.ray_collision_points = []
-        self.ray_colision_points_dst = []### to delete
+        self.ray_collision_points_distances = []
 
     def check_radar(self, car_x, car_y, angle, track, collision_color):
         self.ray_cords = []
         self.ray_collision_points = []
-        self.ray_colision_points_distances = []
-        self.rays = []
+        self.ray_collision_points_distances = []
 
         angle0 = self.ray_spread / 2
         angle1 = - self.ray_spread / 2
@@ -150,10 +149,10 @@ class Radar():
                     self.ray_collision_points.append(ray_end)
                     break
 
-                self.ray_colision_points_distances.append(dist)
+                self.ray_collision_points_distances.append(dist)
                 self.ray_cords.append([(car_x, car_y), ray_end])
 
-        return self.ray_colision_points_distances
+        return self.ray_collision_points_distances
     
     def draw(self, screen):
         for line in self.ray_cords:
