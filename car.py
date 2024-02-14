@@ -1,7 +1,7 @@
 import math
 import pygame
 import time 
-import tensorflow as tf
+from network import MutableNeuralNetwork, FullyConnectedLayer
 import numpy as np
 
 CAR_LENGHT = 45
@@ -27,10 +27,10 @@ class Car:
         self.car_info = np.ones(ray_count + 1).reshape(1, -1)
     
         if self.ai:
-            self.brain = tf.keras.models.Sequential([
-                tf.keras.layers.Input(ray_count + 1), # input = sensors + speed
-                tf.keras.layers.Dense(ray_count + 1),
-                tf.keras.layers.Dense(2) ## output = rear/forward + left/right
+            self.brain = MutableNeuralNetwork([
+                FullyConnectedLayer(ray_count + 1, ray_count + 1), # input = sensors + speed
+                FullyConnectedLayer(ray_count + 1, ray_count + 1),
+                FullyConnectedLayer(ray_count + 1, 2) ## output = rear/forward + left/right
             ])
 
     def get_keyboard_controls(self):
@@ -53,7 +53,7 @@ class Car:
         left, right, forward, rear = False, False, False, False
         self.car_info[:, :-1] = 1 - self.car_info[:, :-1] / self.radar.ray_length
         self.car_info[:, -1] = self.car_info[:, -1] / MAX_SPEED
-        steering = self.brain.predict(self.car_info, verbose=0)
+        steering = self.brain.predict(self.car_info)
 
         if steering[0, 0] >= 0:
             forward = True
