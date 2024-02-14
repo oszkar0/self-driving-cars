@@ -16,6 +16,7 @@ class Car:
         self.speed = 0
         self.angle = angle
         self.ai = ai
+        self.alive = True
 
     def get_keyboard_controls(self):
         keys = pygame.key.get_pressed()
@@ -36,7 +37,7 @@ class Car:
     def get_neaural_network_controls(self):
         pass
 
-    def update(self, dt):
+    def update(self, dt, track, collision_color):
         ## get controls
         if self.ai:
             left, right, forward, rear = self.get_neural_network_controls()
@@ -73,6 +74,16 @@ class Car:
         self.x += -self.speed * dt * math.sin(math.radians(self.angle))
         self.y += -self.speed * dt * math.cos(math.radians(self.angle))
 
+        ## check for collision
+        ## if any of the corners of car rect is on collision color then we have collision
+        car_points_cords = self.calculate_rotated_car_points()
+
+        if any(track.get_at(point) == collision_color for point in car_points_cords):
+            self.alive = False
+        
+
+
+
 
     def draw(self, screen):
         car_points = self.calculate_rotated_car_points()
@@ -97,6 +108,6 @@ class Car:
             ## translate rotated points
             rotated_x += self.x
             rotated_y += self.y
-            rotated_points.append((rotated_x, rotated_y))
+            rotated_points.append((int(rotated_x), int(rotated_y)))
 
         return rotated_points

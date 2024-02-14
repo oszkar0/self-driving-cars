@@ -7,7 +7,9 @@ clock = pygame.time.Clock()
 running = True
 dt = 0
 
-car = Car(640, 360, 0)
+car = Car(226, 111, -90)
+track = pygame.image.load("track.png")
+
 
 while running:
     for event in pygame.event.get():
@@ -15,12 +17,15 @@ while running:
             running = False
 
     # update
-    car.update(dt)
+    car.update(dt, track, (255, 255, 255, 255))
 
     # draw 
-    screen.fill('white')
+    screen.blit(track, (0, 0))
     car.draw(screen)
     pygame.display.flip()
+
+    if not car.alive:
+        car = Car(226, 111, -90)
 
     dt = clock.tick(60) / 1000
 
