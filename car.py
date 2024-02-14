@@ -10,13 +10,14 @@ FRICTION_DECELERATION = 5
 ANGLE_INCREASE = 30
 
 class Car:
-    def __init__(self, init_x, init_y, angle=-90, ai=False):
+    def __init__(self, init_x, init_y, angle=-90, ray_count=5, ray_spread=math.pi/2, ray_length=100, ai=False):
         self.x = init_x
         self.y = init_y
         self.speed = 0
         self.angle = angle
         self.ai = ai
         self.alive = True
+        self.radar = Radar(ray_count, ray_spread, ray_length)
 
     def get_keyboard_controls(self):
         keys = pygame.key.get_pressed()
@@ -81,13 +82,14 @@ class Car:
         if any(track.get_at(point) == collision_color for point in car_points_cords):
             self.alive = False
         
-
-
-
+        ##check radars
+        radar_readings = self.radar.check_radar(self.x, self.y, self.angle, track, collision_color)
+        
 
     def draw(self, screen):
         car_points = self.calculate_rotated_car_points()
         pygame.draw.polygon(screen, COLOR, car_points)
+        self.radar.draw(screen)
 
     def calculate_rotated_car_points(self):
         angle_rad = math.radians(self.angle)
@@ -120,11 +122,10 @@ class Radar():
         self.ray_length = ray_length
         self.ray_spread = ray_spread
 
-        self.rays = []
         self.ray_cords = []
         self.ray_colision_points_dst = []
 
-    def check_radar(self, car_x, car_y, track, collision_color):
+    def check_radar(self, car_x, car_y, angle, track, collision_color):
         self.ray_cords = []
         self.ray_colision_points_distances = []
         self.rays = []
@@ -137,22 +138,22 @@ class Radar():
         for i in range(self.ray_count):
             ray_collided = False
 
-            for dist in range(1, self.ray_spread):
+            for dist in range(1, self.ray_length + 1):
                 ray_end = (
-                    int(self.car.x - math.sin(angle0 - i * dangle + math.radians(self.car.angle)) * self.ray_length),
-                    int(self.car.y - math.cos(angle0 - i * dangle + math.radians(self.car.angle)) * self.ray_length)
+                    int(car_x - math.sin(angle0 - i * dangle + math.radians(angle)) * dist),
+                    int(car_y - math.cos(angle0 - i * dangle + math.radians(angle)) * dist)
                 )
 
                 if track.get_at(ray_end) == collision_color:
-                    continue
+                    break
 
-            self.ray_colision_points_distances.append(dist)
-            self.ray_cords.append([(car_x, car_y), ray_end])
+                self.ray_colision_points_distances.append(dist)
+                self.ray_cords.append([(car_x, car_y), ray_end])
 
         return self.ray_colision_points_distances
     
     def draw(self, screen):
-        for line in self.rays:
+        for line in self.ray_cords:
             pygame.draw.line(screen, 'yellow', line[0], line[1], width=2)
                 
 
