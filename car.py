@@ -121,5 +121,36 @@ class Radar():
         self.ray_spread = ray_spread
 
         self.rays = []
-        self.ray_colision_points = []
+        self.ray_cords = []
         self.ray_colision_points_dst = []
+
+    def check_radar(self, car_x, car_y, track, collision_color):
+        self.ray_cords = []
+        self.ray_colision_points_distances = []
+        self.rays = []
+
+        angle0 = self.ray_spread / 2
+        angle1 = - self.ray_spread / 2
+        dangle = self.ray_spread / (self.ray_count - 1)
+        
+        ## check if ray collides with road bounds
+        for i in range(self.ray_count):
+            ray_collided = False
+
+            for dist in range(1, self.ray_spread):
+                ray_end = (
+                    int(self.car.x - math.sin(angle0 - i * dangle + math.radians(self.car.angle)) * self.ray_length),
+                    int(self.car.y - math.cos(angle0 - i * dangle + math.radians(self.car.angle)) * self.ray_length)
+                )
+
+                if track.get_at(ray_end) == collision_color:
+                    continue
+
+            self.ray_colision_points_distances.append(dist)
+            self.ray_cords.append([(car_x, car_y), ray_end])
+
+        return self.ray_colision_points_distances
+                
+
+        
+
