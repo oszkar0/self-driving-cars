@@ -150,6 +150,10 @@ class Radar():
             self.ray_cords.append([(car_x, car_y), ray_end])
 
         return self.ray_colision_points_distances
+    
+    def draw(self, screen):
+        for line in self.rays:
+            pygame.draw.line(screen, 'yellow', line[0], line[1], width=2)
                 
 
         
