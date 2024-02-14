@@ -1,5 +1,6 @@
 import math
 import pygame
+import time 
 
 CAR_LENGHT = 45
 CAR_WIDTH = 20
@@ -18,6 +19,9 @@ class Car:
         self.ai = ai
         self.alive = True
         self.radar = Radar(ray_count, ray_spread, ray_length)
+        self.distance = 0;
+        self.birth_time = time.time()
+        self.time_alive = 0;
 
     def get_keyboard_controls(self):
         keys = pygame.key.get_pressed()
@@ -72,14 +76,20 @@ class Car:
                 self.angle -= dt * ANGLE_INCREASE * flip
 
         ## update position
-        self.x += -self.speed * dt * math.sin(math.radians(self.angle))
-        self.y += -self.speed * dt * math.cos(math.radians(self.angle))
+        new_x = self.x + -self.speed * dt * math.sin(math.radians(self.angle))
+        new_y = self.y - self.speed * dt * math.cos(math.radians(self.angle))
+
+        self.distance += math.sqrt((new_x - self.x)**2 + (new_y - self.y)**2)
+
+        self.x = new_x
+        self.y = new_y
 
         ## check for collision
         ## if any of the corners of car rect is on collision color then we have collision
         car_points_cords = self.calculate_rotated_car_points()
 
         if any(track.get_at(point) == collision_color for point in car_points_cords):
+            self.time_alive = time.time() - self.birth_time
             self.alive = False
         
         ##check radars
@@ -113,6 +123,10 @@ class Car:
             rotated_points.append((int(rotated_x), int(rotated_y)))
 
         return rotated_points
+    
+    def get_fitness(self):
+        ## we reward cars for driving long distances + for good average speed
+        return self.distance + self.distance / self.time_alive
 
 
 
