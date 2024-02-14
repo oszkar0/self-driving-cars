@@ -111,3 +111,15 @@ class Car:
             rotated_points.append((int(rotated_x), int(rotated_y)))
 
         return rotated_points
+
+
+
+class Radar():
+    def __init__(self, ray_count, ray_spread, ray_length):
+        self.ray_count = ray_count
+        self.ray_length = ray_length
+        self.ray_spread = ray_spread
+
+        self.rays = []
+        self.ray_colision_points = []
+        self.ray_colision_points_dst = []
