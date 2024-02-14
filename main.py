@@ -14,6 +14,10 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    # update
+    car.update(dt)
+
+    # draw 
     screen.fill('white')
     car.draw(screen)
     pygame.display.flip()
