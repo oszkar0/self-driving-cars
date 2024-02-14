@@ -123,10 +123,12 @@ class Radar():
         self.ray_spread = ray_spread
 
         self.ray_cords = []
-        self.ray_colision_points_dst = []
+        self.ray_collision_points = []
+        self.ray_colision_points_dst = []### to delete
 
     def check_radar(self, car_x, car_y, angle, track, collision_color):
         self.ray_cords = []
+        self.ray_collision_points = []
         self.ray_colision_points_distances = []
         self.rays = []
 
@@ -145,6 +147,7 @@ class Radar():
                 )
 
                 if track.get_at(ray_end) == collision_color:
+                    self.ray_collision_points.append(ray_end)
                     break
 
                 self.ray_colision_points_distances.append(dist)
@@ -155,6 +158,9 @@ class Radar():
     def draw(self, screen):
         for line in self.ray_cords:
             pygame.draw.line(screen, 'yellow', line[0], line[1], width=2)
+
+        for collision_point in self.ray_collision_points:
+            pygame.draw.circle(screen, 'purple', collision_point, 2)
                 
 
         
