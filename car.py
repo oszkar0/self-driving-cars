@@ -151,8 +151,8 @@ class Car:
         return rotated_points
     
     def get_fitness(self):
-        ## we reward cars for driving long distances + for good average speed
-        return self.distance + self.distance / self.time_alive
+        ## we reward cars for driving long distances
+        return self.distance
 
 
 
