@@ -12,17 +12,26 @@ class MutableNeuralNetwork:
         
         return output
     
-    def mutate(alpha=0.1):
-        for layer in self.layers:
-            layer.weights += (np.random.rand(*layer.weights.shape) - 0.5) * alpha
-            layer.bias += (np.random.rand(*layer.weights.bias) - 0.5) * alpha
+    def mutate(self, alpha=0.1):
+        mutated_layers = []
 
+        for layer in self.layers:
+            weights = layer.weights.copy() + (np.random.rand(*layer.weights.shape) - 0.5) * alpha
+            bias = layer.bias.copy() + (np.random.rand(*layer.bias.shape) - 0.5) * alpha
+            mutated_layer = FullyConnectedLayer(weights=weights, bias=bias)
+            mutated_layers.append(mutated_layer)
+
+        return MutableNeuralNetwork(mutated_layers)
 
 class FullyConnectedLayer():
-    def __init__(self, input_size, output_size):
-        #  create weights and bias matrices, initially with random values
-        self.weights = np.random.rand(input_size, output_size) - 0.5
-        self.bias = np.random.rand(1, output_size) - 0.5
+    def __init__(self, input_size=None, output_size=None, weights=None, bias=None):
+        if weights is not None and bias is not None:
+            self.weights = weights
+            self.bias = bias
+        elif input_size is not None and output_size is not None:
+            #  create weights and bias matrices, initially with random values
+            self.weights = np.random.rand(input_size, output_size) - 0.5
+            self.bias = np.random.rand(1, output_size) - 0.5
 
     def forward_propagate(self, input_data):
         self.input = input_data
