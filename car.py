@@ -25,6 +25,8 @@ class Car:
         self.birth_time = time.time()
         self.time_alive = 0;
         self.car_info = np.ones(ray_count + 1).reshape(1, -1)
+        self.last_check_time = time.time()
+        self.last_distance = 0
     
         if self.ai:
             self.brain = MutableNeuralNetwork([
@@ -93,9 +95,10 @@ class Car:
         if self.speed < -MAX_SPEED / 3:
             self.speed = -MAX_SPEED / 3
 
+        flip = 1 if self.speed > 0 else -1
+
         ## turn controls
         if self.speed != 0:
-            flip = 1 if self.speed > 0 else -1
             if left:
                 self.angle += dt * ANGLE_INCREASE * flip
             if right:
@@ -105,10 +108,23 @@ class Car:
         new_x = self.x + -self.speed * dt * math.sin(math.radians(self.angle))
         new_y = self.y - self.speed * dt * math.cos(math.radians(self.angle))
 
-        self.distance += math.sqrt((new_x - self.x)**2 + (new_y - self.y)**2)
+        ## new way of calculating distance ensures cars will be driving forward
+        self.distance += flip * math.sqrt((new_x - self.x)**2 + (new_y - self.y)**2)
 
         self.x = new_x
-        self.y = new_y
+        self.y = new_y 
+        
+        ## if car keeps driving back and forward in a loop we have to 'kill' him manully
+        ## since it might never die
+        time_elapsed_since_last_check = time.time() - self.last_check_time
+
+        # Check if two seconds have elapsed since the last check
+        if time_elapsed_since_last_check >= 2:
+            if abs(self.last_distance - self.distance) < 20:
+                self.alive = False
+
+            self.last_check_time = time.time()
+            self.last_distance = self.distance
 
         ## check for collision
         ## if any of the corners of car rect is on collision color then we have collision
