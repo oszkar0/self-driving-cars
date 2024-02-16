@@ -1,17 +1,25 @@
 import pygame
 from car import Car
-import time
+
+GENERATION_SIZE = 10
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+INITIAL_X = 226
+INITIAL_Y = 111
+TRACK_IMG = 'track.png'
+COLLISION_COLOR = (255, 255, 255, 255)
+MUTATION_RATE = 0.3
 
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 running = True
 dt = 0
 generation = 0
 font = pygame.font.Font(None, 36)
+track = pygame.image.load(TRACK_IMG)
 
-cars = [Car(226, 111, -90, ai=True) for i in range(10)]
-track = pygame.image.load("track.png")
+cars = [Car(INITIAL_X, INITIAL_Y, -90, ai=True) for i in range(10)]
 
 while running:
     generation_alive = False
@@ -23,7 +31,7 @@ while running:
     # update
     for car in cars:
         if car.alive:
-            car.update(dt, track, (255, 255, 255, 255))
+            car.update(dt, track, COLLISION_COLOR)
             generation_alive = generation_alive or car.alive
 
     # draw 
@@ -33,8 +41,7 @@ while running:
             car.draw(screen)
 
     generation_text = font.render(f'GENERATION: {generation}', True, (0, 0, 255))
-    screen.blit(generation_text, (10, 10))  # Blit the text to the screen at position (10, 10)
-
+    screen.blit(generation_text, (10, 10))  
 
     # check if generation is dead
     if not generation_alive:
@@ -51,8 +58,8 @@ while running:
         cars = []
         
         for i in range(10):
-            car = Car(226, 111, -90, ai=True)
-            car.brain = best_brain.mutate(1)
+            car = Car(INITIAL_X, INITIAL_Y, -90, ai=True)
+            car.brain = best_brain.mutate(MUTATION_RATE)
             cars.append(car)
 
     pygame.display.flip()
