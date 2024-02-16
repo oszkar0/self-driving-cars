@@ -1,16 +1,16 @@
 import math
 import pygame
 import time 
-from network import MutableNeuralNetwork, FullyConnectedLayer
+from network import MutableNeuralNetwork, FullyConnectedLayer, sigmoid
 import numpy as np
 
 CAR_LENGHT = 45
 CAR_WIDTH = 20
 COLOR = 'red'
-MAX_SPEED = 200
+MAX_SPEED = 100
 GAS_ACCELERATION = 250
 FRICTION_DECELERATION = 5
-ANGLE_INCREASE = 30
+ANGLE_INCREASE = 110
 
 class Car:
     def __init__(self, init_x, init_y, angle=-90, ray_count=5, ray_spread=math.pi/2, ray_length=100, ai=False):
@@ -24,15 +24,17 @@ class Car:
         self.distance = 0;
         self.birth_time = time.time()
         self.time_alive = 0;
-        self.car_info = np.ones(ray_count + 1).reshape(1, -1)
+        self.car_info = np.ones(ray_count).reshape(1, -1)
         self.last_check_time = time.time()
         self.last_distance = 0
     
         if self.ai:
             self.brain = MutableNeuralNetwork([
-                FullyConnectedLayer(ray_count + 1, ray_count + 1), # input = sensors + speed
-                FullyConnectedLayer(ray_count + 1, ray_count + 1),
-                FullyConnectedLayer(ray_count + 1, 2) ## output = rear/forward + left/right
+                FullyConnectedLayer(ray_count, ray_count + 4), # input = sensors + speed
+                FullyConnectedLayer(ray_count + 4, ray_count + 4),
+                FullyConnectedLayer(ray_count + 4, ray_count + 4),
+                FullyConnectedLayer(ray_count + 4, ray_count),
+                FullyConnectedLayer(ray_count, 2, activation_function=sigmoid) ## output = rear/forward + left/right
             ])
 
     def get_keyboard_controls(self):
@@ -53,18 +55,17 @@ class Car:
 
     def get_neural_network_controls(self):
         left, right, forward, rear = False, False, False, False
-        self.car_info[:, :-1] = 1 - self.car_info[:, :-1] / self.radar.ray_length
-        self.car_info[:, -1] = self.car_info[:, -1] / MAX_SPEED
+        self.car_info = 1 - self.car_info / self.radar.ray_length
         steering = self.brain.predict(self.car_info)
 
-        if steering[0, 0] >= 0:
+        if steering[0, 0] >= 0.7:
             forward = True
-        else: 
+        elif steering[0, 0] <= 0.3:
             rear = True
 
-        if steering[0, 1] >= 0:
+        if steering[0, 1] >= 0.7:
             right = True
-        else:
+        elif steering[0, 1] <= 0.3:
             left = True
 
         return left, right, forward, rear
@@ -136,7 +137,7 @@ class Car:
         
         ##check radars
         radar_readings = self.radar.check_radar(self.x, self.y, self.angle, track, collision_color)
-        self.car_info = np.hstack([radar_readings, self.speed]).reshape(1, -1)
+        self.car_info = np.array(radar_readings).reshape(1, -1)
 
     def draw(self, screen):
         car_points = self.calculate_rotated_car_points()
