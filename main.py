@@ -1,70 +1,83 @@
 import pygame
 from car import Car
+import neat
 
 GENERATION_SIZE = 10
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 INITIAL_X = 226
 INITIAL_Y = 111
-TRACK_IMG = 'track.png'
+TRACK_IMG = 'track2.png'
 COLLISION_COLOR = (255, 255, 255, 255)
-MUTATION_RATE = 0.3
+MUTATION_RATE = 0.5
 
-pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-clock = pygame.time.Clock()
-running = True
-dt = 0
-generation = 0
-font = pygame.font.Font(None, 36)
-track = pygame.image.load(TRACK_IMG)
 
-cars = [Car(INITIAL_X, INITIAL_Y, -90, ai=True) for i in range(10)]
+def run_generation(genomes, config):
+    
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    clock = pygame.time.Clock()        
+    font = pygame.font.Font(None, 36)
+    track = pygame.image.load(TRACK_IMG)
+    dt = 0
+    running = True
+    global generation
+    generation += 1
 
-while running:
-    generation_alive = False
+    cars = []
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for index, genome in genomes:
+        neural_network = neat.nn.FeedForwardNetwork.create(genome, config)
+        genome.fitness = 0
+        car = Car(INITIAL_X, INITIAL_Y, neural_network=neural_network)
+        cars.append(car)
+        
+
+    while running:
+        generation_alive = False
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # update
+        for index, car in enumerate(cars):
+            if car.alive:
+                car.update(dt, track, COLLISION_COLOR)
+                genomes[index][1].fitness = car.get_fitness()
+                generation_alive = True
+
+        # draw 
+        screen.blit(track, (0, 0))
+        for car in cars:
+            if car.alive:
+                car.draw(screen)
+
+        generation_text = font.render(f'GENERATION: {generation}', True, (0, 0, 255))
+        screen.blit(generation_text, (10, 10))        
+        pygame.display.flip()
+
+        if not generation_alive:
             running = False
 
-    # update
-    for car in cars:
-        if car.alive:
-            car.update(dt, track, COLLISION_COLOR)
-            generation_alive = generation_alive or car.alive
+        dt = clock.tick(60) / 1000
 
-    # draw 
-    screen.blit(track, (0, 0))
-    for car in cars:
-        if car.alive:
-            car.draw(screen)
+    pygame.quit()
 
-    generation_text = font.render(f'GENERATION: {generation}', True, (0, 0, 255))
-    screen.blit(generation_text, (10, 10))  
+if __name__ == "__main__":
+    global generation
+    generation = -1
+    
+    config_path = "config.txt"
+    config = neat.config.Config(neat.DefaultGenome,
+                                neat.DefaultReproduction,
+                                neat.DefaultSpeciesSet,
+                                neat.DefaultStagnation,
+                                config_path)
 
-    # check if generation is dead
-    if not generation_alive:
-        generation += 1
-        ## find the best 'brain'
-        best_fitness = cars[0].get_fitness()
-        best_brain = cars[0].brain
-
-        for car in cars:
-            if car.get_fitness() > best_fitness:
-                best_fitness = car.get_fitness()
-                best_brain = car.brain
-        
-        cars = []
-        
-        for i in range(10):
-            car = Car(INITIAL_X, INITIAL_Y, -90, ai=True)
-            car.brain = best_brain.mutate(MUTATION_RATE)
-            cars.append(car)
-
-    pygame.display.flip()
-
-
-    dt = clock.tick(60) / 1000
-
-pygame.quit()
+    population = neat.Population(config)
+    population.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    population.add_reporter(stats)
+    
+    population.run(run_generation, 300)
