@@ -1,7 +1,6 @@
 import math
 import pygame
-import time 
-from network import MutableNeuralNetwork, FullyConnectedLayer, sigmoid
+import time
 import numpy as np
 
 CAR_LENGHT = 45
@@ -13,12 +12,11 @@ FRICTION_DECELERATION = 5
 ANGLE_INCREASE = 110
 
 class Car:
-    def __init__(self, init_x, init_y, angle=-90, ray_count=5, ray_spread=math.pi/2, ray_length=100, ai=False):
+    def __init__(self, init_x, init_y, angle=-90, ray_count=5, ray_spread=math.pi/2, ray_length=100, neural_network=None):
         self.x = init_x
         self.y = init_y
         self.speed = 0
         self.angle = angle
-        self.ai = ai
         self.alive = True
         self.radar = Radar(ray_count, ray_spread, ray_length)
         self.distance = 0;
@@ -27,15 +25,10 @@ class Car:
         self.car_info = np.ones(ray_count).reshape(1, -1)
         self.last_check_time = time.time()
         self.last_distance = 0
+        self.brain = None
     
-        if self.ai:
-            self.brain = MutableNeuralNetwork([
-                FullyConnectedLayer(ray_count, ray_count + 4), # input = sensors + speed
-                FullyConnectedLayer(ray_count + 4, ray_count + 4),
-                FullyConnectedLayer(ray_count + 4, ray_count + 4),
-                FullyConnectedLayer(ray_count + 4, ray_count),
-                FullyConnectedLayer(ray_count, 2, activation_function=sigmoid) ## output = rear/forward + left/right
-            ])
+        if neural_network is not None:
+            self.brain = neural_network
 
     def get_keyboard_controls(self):
         keys = pygame.key.get_pressed()
@@ -56,16 +49,16 @@ class Car:
     def get_neural_network_controls(self):
         left, right, forward, rear = False, False, False, False
         self.car_info = 1 - self.car_info / self.radar.ray_length
-        steering = self.brain.predict(self.car_info)
+        steering = self.brain.activate(self.car_info.reshape(-1))
 
-        if steering[0, 0] >= 0.7:
+        if steering[0] >= 0.7:
             forward = True
-        elif steering[0, 0] <= 0.3:
+        elif steering[0] <= 0.3:
             rear = True
 
-        if steering[0, 1] >= 0.7:
+        if steering[1] >= 0.7:
             right = True
-        elif steering[0, 1] <= 0.3:
+        elif steering[1] <= 0.3:
             left = True
 
         return left, right, forward, rear
@@ -73,7 +66,7 @@ class Car:
 
     def update(self, dt, track, collision_color):
         ## get controls
-        if self.ai:
+        if self.brain is not None:
             left, right, forward, rear = self.get_neural_network_controls()
         else: 
             left, right, forward, rear = self.get_keyboard_controls()
